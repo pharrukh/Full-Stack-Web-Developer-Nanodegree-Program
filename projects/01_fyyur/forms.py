@@ -10,8 +10,8 @@ class ShowForm(Form):
     venue_id = StringField(
         'venue_id'
     )
-    start_time = DateTimeField(
-        'start_time',
+    start_datetime = DateTimeField(
+        'start_datetime',
         validators=[DataRequired()],
         default= datetime.today()
     )
