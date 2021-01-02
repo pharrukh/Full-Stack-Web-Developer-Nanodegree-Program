@@ -5,7 +5,15 @@
 import json
 import dateutil.parser
 import babel
-from flask import Flask, render_template, request, Response, flash, redirect, url_for
+from flask import (
+Flask,
+render_template,
+request,
+Response,
+flash,
+redirect,
+url_for
+)
 from flask_moment import Moment
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import contains_eager
@@ -16,6 +24,7 @@ from flask_migrate import Migrate
 from forms import *
 from datetime import datetime, timedelta
 from collections import defaultdict
+from models import app, db, Venue, Artist, Show
 
 #----------------------------------------------------------------------------#
 # App Config.
@@ -25,61 +34,7 @@ app = Flask(__name__)
 moment = Moment(app)
 app.config.from_object('config')
 db = SQLAlchemy(app)
-migrate = Migrate(app, db)
-
-#----------------------------------------------------------------------------#
-# Models.
-#----------------------------------------------------------------------------#
-
-class Venue(db.Model):
-    __tablename__ = 'Venue'
-
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String)
-    city = db.Column(db.String(120))
-    state = db.Column(db.String(120))
-    address = db.Column(db.String(120))
-    genres = db.Column(db.ARRAY(db.String))
-    phone = db.Column(db.String(120))
-    website = db.Column(db.String(120))
-    seeking_talent = db.Column(db.Boolean)
-    seeking_description = db.Column(db.String)
-    image_link = db.Column(db.String(500))
-    facebook_link = db.Column(db.String(120))
-    shows = db.relationship('Show', backref='venue_shows', lazy=True)
-    create_at = db.Column(db.DateTime)
-
-class Artist(db.Model):
-    __tablename__ = 'Artist'
-
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String)
-    city = db.Column(db.String(120))
-    state = db.Column(db.String(120))
-    phone = db.Column(db.String(120))
-    genres = db.Column(db.ARRAY(db.String))
-    phone = db.Column(db.String(120))
-    website = db.Column(db.String(120))
-    seeking_venue = db.Column(db.Boolean)
-    seeking_description = db.Column(db.String)
-    image_link = db.Column(db.String(500))
-    facebook_link = db.Column(db.String(120))
-    shows = db.relationship('Show', backref='artist_shows', lazy=True)
-    create_at = db.Column(db.DateTime)
-
-class Show(db.Model):
-    __tablename__ = 'Show'
-
-    id = db.Column(db.Integer, primary_key=True)
-    venue_id = db.Column(db.Integer, db.ForeignKey('Venue.id'), nullable=True)
-    artist_id = db.Column(db.Integer, db.ForeignKey('Artist.id'), nullable=True)
-    start_datetime = db.Column(db.DateTime, nullable=False)
-
-    artist = db.relationship("Artist", backref='Artist', lazy=True)
-    venue = db.relationship("Venue", backref='Venue', lazy=True)
-
-    def __repr__(self):
-      return f'{self.id}\n{self.start_datetime}\n'
+db.init_app(app)
 
 #----------------------------------------------------------------------------#
 # Filters.
@@ -244,7 +199,10 @@ def edit_venue(venue_id):
     phone=venue.phone,
     image_link=venue.image_link,
     genres=venue.genres,
-    facebook_link=venue.facebook_link
+    facebook_link=venue.facebook_link,
+    website=venue.website,
+    seeking_talent=venue.seeking_talent,
+    seeking_description=venue.seeking_description
   )
   return render_template('forms/edit_venue.html', form=form, venue=Venue.query.get(venue_id))
 
@@ -352,6 +310,25 @@ def not_found_error(error):
 def server_error(error):
     return render_template('errors/500.html'), 500
 
+@app.errorhandler(401)
+def server_error(error):
+    return render_template('errors/401.html'), 401
+
+@app.errorhandler(403)
+def server_error(error):
+    return render_template('errors/403.html'), 403
+
+@app.errorhandler(422)
+def server_error(error):
+    return render_template('errors/422.html'), 422
+
+@app.errorhandler(405)
+def server_error(error):
+    return render_template('errors/405.html'), 405
+
+@app.errorhandler(409)
+def server_error(error):
+    return render_template('errors/405.html'), 409
 
 if not app.debug:
     file_handler = FileHandler('error.log')
